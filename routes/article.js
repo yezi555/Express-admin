@@ -4,8 +4,16 @@ const { body, check, validationResult } = require('express-validator');
 const articleService = require('../services/articleService');
 
 //新增/修改分类
-router.post('/updateArticle', articleService.updateClassification)
+router.post('/updateArticleClass', articleService.updateClassification)
 //删除分类
-router.get('/deleteArticle/:id', articleService.deleteClassification)
+router.get('/deleteArticleClass/:id', articleService.deleteClassification)
+//c查询分类
+router.get('/getArticleClass', articleService.getClassification)
+
+//新增/修改文章
+router.post('/updateArticle', articleService.updateArticle)
+//获取文章
+router.get('/getArticleList/:id', articleService.getArticleList)
+
 
 module.exports = router;
