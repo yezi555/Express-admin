@@ -12,8 +12,9 @@ router.get('/getArticleClass', articleService.getClassification)
 
 //新增/修改文章
 router.post('/updateArticle', articleService.updateArticle)
-//获取文章
+//获取文章列表
 router.get('/getArticleList/:id', articleService.getArticleList)
-
+//获取文章详情
+router.get('/getArticleDetail/:id', articleService.getArticleDetail)
 
 module.exports = router;

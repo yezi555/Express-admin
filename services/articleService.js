@@ -168,6 +168,31 @@ function updateArticle(req, res, next) {
     })
   }
 }
+//查询文章详情
+function getArticleDetail(req, res, next) {
+  const err = validationResult(req);
+  if (!err.isEmpty()) {
+    const [{ msg }] = err.errors;
+    next(boom.badRequest(msg));
+  } else {
+    const query = `select * from sys_article where id=${req.params.id}`
+    querySql(query).then(result => {
+      if (result.length === 1) {
+        res.json({
+          code: CODE_SUCCESS,
+          msg: '成功',
+          data: result[0]
+        })
+      } else {
+        res.json({
+          code: CODE_ERROR,
+          msg: '失败',
+          data: null
+        })
+      }
+    })
+  }
+}
 
 //查询表所有字段
 function getTableAll(tableName) {
@@ -210,5 +235,6 @@ module.exports = {
   deleteClassification,
   getClassification,
   updateArticle,
-  getArticleList
+  getArticleList,
+  getArticleDetail
 }
