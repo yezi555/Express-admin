@@ -3,6 +3,7 @@ const md5 = require('../utils/md5');
 const jwt = require('jsonwebtoken');
 const boom = require('boom');
 const { body, validationResult } = require('express-validator');
+
 const {
   CODE_ERROR,
   CODE_SUCCESS,
@@ -11,6 +12,7 @@ const {
 } = require('../utils/constant');
 const { decode } = require('../utils/user-jwt');
 
+var request = require('request');
 
 // 登录
 function login(req, res, next) {
@@ -39,7 +41,7 @@ function login(req, res, next) {
           // 登录成功，签发一个token并返回给前端
           const token = jwt.sign(
             // payload：签发的 token 里面要包含的一些数据。
-            { username },
+            { id: user[0].id, username },
             // 私钥
             PRIVATE_KEY,
             // 设置过期时间
@@ -50,7 +52,7 @@ function login(req, res, next) {
             id: user[0].id,
             username: user[0].username,
             nickname: user[0].nickname,
-            avator: user[0].avator,
+            avatarUrl: user[0].avatarUrl,
             sex: user[0].sex,
             gmt_create: user[0].gmt_create,
             gmt_modify: user[0].gmt_modify
@@ -68,7 +70,139 @@ function login(req, res, next) {
       })
   }
 }
+//微信登陆
+function WxLogin(req, res, next) {
+  let { code, avatarUrl, nickName } = req.body;
+  if (code) {
+    let url = xcxLoginGetToken(code)
+    console.log('---------------', url)
+    request(url, async (err, response, body) => {
+      if (err) console.log('-=-=-=-=-=-=-', err);
+      console.log('------', body)
+      let { openid } = JSON.parse(body)
+      console.log('---openid---', openid)
 
+      checkWxUser(openid).then(result => {
+        if (!result || result.length === 0) {
+          const querySqls = `insert into sys_user(username, avatarUrl,openid) values('${nickName}', '${avatarUrl}','${openid}')`;
+          addUser(querySqls, nickName, openid, res)
+        } else {
+          const querySqll = `select * from sys_user where username='${nickName}' and openid='${openid}'`;
+          querySql(querySqll)
+            .then(user => {
+              const token = jwt.sign(
+                // payload：签发的 token 里面要包含的一些数据。
+                { id: user[0].id, username: nickName },
+                // 私钥
+                PRIVATE_KEY,
+                // 设置过期时间
+                { expiresIn: JWT_EXPIRED }
+              )
+
+              let userData = { ...user[0] };
+
+              res.json({
+                code: CODE_SUCCESS,
+                msg: '登录成功',
+                data: {
+                  token,
+                  userData
+                }
+              })
+            })
+        }
+      })
+
+
+    })
+  }
+}
+//添加用户到数据库
+function addUser(query, username, openid, res) {
+  return new Promise((resolve, reject) => {
+    querySql(query)
+      .then(result => {
+        // console.log('用户注册===', result);
+        if (!result || result.length === 0) {
+          res.json({
+            code: CODE_ERROR,
+            msg: '注册失败',
+            data: null
+          })
+        } else {
+          const queryUser = `select * from sys_user where username='${username}' and openid='${openid}'`;
+          querySql(queryUser)
+            .then(user => {
+              const token = jwt.sign(
+                { id: user[0].id, username },
+                PRIVATE_KEY,
+                { expiresIn: JWT_EXPIRED }
+              )
+              let userData = { ...user[0] };
+
+              res.json({
+                code: CODE_SUCCESS,
+                msg: '注册成功',
+                data: {
+                  token,
+                  userData
+                }
+              })
+            })
+        }
+      })
+  })
+}
+//查询是否有这个用户
+function checkWxUser(openid, username, avatarUrl) {
+  return new Promise((resolve, reject) => {
+    const query = `select * from sys_user where openid='${openid}'`;
+    queryOne(query).then(result => {
+      resolve(result)
+    })
+  }
+  )
+}
+//
+xcxLoginGetToken = (code) => {
+  const appid = "wx2f1dd77efc7db5e9";
+  const secret = "263b5882c4952efc21658f409432e37b";
+  //通过code获取用户openid和unionid和session_key
+  const code2Session = "https://api.weixin.qq.com/sns/jscode2session?";//通过code获取用户openid和unionid和session_key
+  const getAccessToken = "https://api.weixin.qq.com/cgi-bin/token";//获取accesstoken
+  let js_code = code;
+  let params = {
+    appid,
+    secret,
+    js_code,
+    grant_type: "authorization_code",
+  }
+  let urlData = encodeSearchParams(params);
+  let url = `${code2Session}${urlData}`
+  return url
+}
+
+
+//
+encodeSearchParams = (obj) => {
+  const params = []
+  Object.keys(obj).forEach((key) => {
+    let value = obj[key]
+    // 如果值为undefined我们将其置空
+    if (typeof value === 'undefined') {
+      value = ''
+    }
+    // 对于需要编码的文本（比如说中文）我们要进行编码
+    params.push([key, encodeURIComponent(value)].join('='))
+  })
+
+  return params.join('&')
+}
+//退出
+function loginOut(req, res, next) {
+  console.log('--------------', req.session)
+  req.session.user = null;
+}
 
 // 注册
 function register(req, res, next) {
@@ -104,7 +238,7 @@ function register(req, res, next) {
                 querySql(queryUser)
                   .then(user => {
                     const token = jwt.sign(
-                      { username },
+                      { id: user[0].id, username },
                       PRIVATE_KEY,
                       { expiresIn: JWT_EXPIRED }
                     )
@@ -113,7 +247,7 @@ function register(req, res, next) {
                       id: user[0].id,
                       username: user[0].username,
                       nickname: user[0].nickname,
-                      avator: user[0].avator,
+                      avatarUrl: user[0].avatarUrl,
                       sex: user[0].sex,
                       gmt_create: user[0].gmt_create,
                       gmt_modify: user[0].gmt_modify
@@ -196,7 +330,7 @@ function getuserInfo(req, res, next) {
     next(boom.badRequest(msg));
   } else {
     const username = decode(req).username
-    const query = `select id,username,nickname,avator,sex from sys_user where username="${username}"`;
+    const query = `select * from sys_user where username="${username}"`;
     querySql(query).then(user => {
       if (!user || user.length === 0) {
         res.json({
@@ -222,9 +356,9 @@ function updateUserInfo(req, res, next) {
     const [{ msg }] = err.errors;
     next(boom.badRequest(msg));
   } else {
-    const username = decode(req).username
-    console.log('校验用户名和密码===', req.body, [req.body]);
-    const sql = `update sys_user set ? where username="${username}"`
+    const id = decode(req).id
+    console.log('校验用户名和密码===', req.body,);
+    const sql = `update sys_user set ? where id="${id}"`
     updateOne(sql, [req.body]).then(result => {
       console.log('校验用户名和密码===', result,);
       if (result.affectedRows === 1) {
@@ -257,8 +391,10 @@ function findUser(username) {
 
 module.exports = {
   login,
+  loginOut,
   register,
   resetPwd,
   getuserInfo,
-  updateUserInfo
+  updateUserInfo,
+  WxLogin
 }
