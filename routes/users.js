@@ -22,7 +22,8 @@ const updateUserInfoVaildator = [
 ]
 // 用户登录路由
 router.post('/login', vaildator, service.login);
-
+// 用户退出登录路由
+router.get('/loginOut', service.loginOut);
 // 用户注册路由
 router.post('/register', vaildator, service.register);
 
@@ -33,6 +34,8 @@ router.post('/resetPwd', resetPwdVaildator, service.resetPwd);
 router.get('/getuserInfo', service.getuserInfo);
 
 //修改用户信息
-router.get('/updateUserInfo', updateUserInfoVaildator, service.updateUserInfo);
+router.post('/updateUserInfo', service.updateUserInfo);
+//微信登陆
+router.post('/wxLogin', service.WxLogin);
 
 module.exports = router;
