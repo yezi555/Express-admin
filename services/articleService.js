@@ -11,6 +11,9 @@ const {
 } = require('../utils/constant');
 const { decode } = require('../utils/user-jwt');
 
+var superagent = require('superagent');
+var cheerio = require('cheerio');
+
 function updateClassification(req, res, next) {
   const err = validationResult(req);
   if (!err.isEmpty()) {
@@ -177,6 +180,8 @@ function getArticleDetail(req, res, next) {
   } else {
     const query = `select * from sys_article where id=${req.params.id}`
     querySql(query).then(result => {
+      console.log('----', result)
+
       if (result.length === 1) {
         res.json({
           code: CODE_SUCCESS,
@@ -218,16 +223,78 @@ function updateOrEdit(req, res, tableName) {
         resolve(result)
       })
     } else {
-      const querySql = `insert into ${tableName} set ?`;
+      const querySqls = `insert into ${tableName} set ?`;
       let objs = {}
       getTableAll(tableName).then(result => {
         objs = result
       })
-      updateOne(querySql, { ...objs, ...req.body }).then(result => {
+      updateOne(querySqls, { ...objs, ...req.body }).then(result => {
         resolve(result)
       })
     }
   })
+}
+//爬百度新闻
+function getBaiduNews(req, res, next) {
+  const { url, seave, lableId } = req.body
+  superagent.get(url)
+    .set('Referer', 'https://author.baidu.com/')
+    .set('Accept', 'image/webp,image/,/*;q=0.8')
+    .end(async (err, sres) => {
+      // console.log('errerrerr', err, sres);
+      // 常规的错误处理
+      if (err) {
+        return next(err);
+      }
+      // sres.text 里面存储着网页的 html 内容，将它传给 cheerio.load 之后
+      // 就可以得到一个实现了 jquery 接口的变量，我们习惯性地将它命名为 `$`
+      // 剩下就都是 jquery 的内容了
+      //删除前一次的数据
+      // let deleteQuery = `delete from sys_article where lable_id=${lableId}`
+      // await querySql(deleteQuery)
+      let $ = cheerio.load(sres.text);
+      let items = [];
+      let values = []
+      $('.xinwen18886_ind04 .con ul').each((idx, element) => {
+        let $element = $(element);
+        console.log('作者----', $element)
+
+      });
+
+      // const querySqls = `insert into sys_article(title,href,content,lable_id,time) values?`;
+      // updateOne(querySqls, [values]).then(result => {
+      //   console.log('------', result)
+      //   res.send(items);
+      // })
+    })
+}
+//爬新闻详情
+function getNewsDetail(req, res, next) {
+  console.log('作者----', req.query)
+
+  const { url, lableId, id } = req.query
+  superagent.get(url)
+    .set('Referer', 'https://author.baidu.com/')
+    .set('Accept', 'image/webp,image/,/*;q=0.8')
+    .end(async (err, sres) => {
+      // console.log('errerrerr', err, sres);
+      // 常规的错误处理
+      if (err) {
+        return next(err);
+      }
+      let $ = cheerio.load(sres.text);
+      let items = [];
+      let values = []
+      console.log('作者----', $('body').html())
+      res.send({
+        content: $('body').html()
+      });
+      const query = `update sys_article_cate set (content) where id=${req.params.id}`
+      // updateOne(query, [values]).then(result => {
+      //   console.log('------', result)
+      //   res.send(items);
+      // })
+    })
 }
 
 module.exports = {
@@ -236,5 +303,7 @@ module.exports = {
   getClassification,
   updateArticle,
   getArticleList,
-  getArticleDetail
+  getArticleDetail,
+  getBaiduNews,
+  getNewsDetail
 }

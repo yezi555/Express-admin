@@ -75,13 +75,8 @@ function WxLogin(req, res, next) {
   let { code, avatarUrl, nickName } = req.body;
   if (code) {
     let url = xcxLoginGetToken(code)
-    console.log('---------------', url)
     request(url, async (err, response, body) => {
-      if (err) console.log('-=-=-=-=-=-=-', err);
-      console.log('------', body)
       let { openid } = JSON.parse(body)
-      console.log('---openid---', openid)
-
       checkWxUser(openid).then(result => {
         if (!result || result.length === 0) {
           const querySqls = `insert into sys_user(username, avatarUrl,openid) values('${nickName}', '${avatarUrl}','${openid}')`;
@@ -158,6 +153,7 @@ function checkWxUser(openid, username, avatarUrl) {
   return new Promise((resolve, reject) => {
     const query = `select * from sys_user where openid='${openid}'`;
     queryOne(query).then(result => {
+      console.log('----查询是否有这个用户-', result)
       resolve(result)
     })
   }
