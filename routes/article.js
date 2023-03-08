@@ -17,9 +17,9 @@ router.get('/getArticleClass', articleService.getClassification)
 //新增/修改文章
 router.post('/updateArticle', articleService.updateArticle)
 //获取文章列表
-router.get('/getArticleList/:id', articleService.getArticleList)
+router.get('/getArticleList', articleService.getArticleList)
 //获取文章详情
-router.get('/getArticleDetail/:id', articleService.getArticleDetail)
+router.get('/getArticleDetail', articleService.getArticleDetail)
 
 //爬新闻列表
 router.get('/getBaiduNews', articleService.getBaiduNews)

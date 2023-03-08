@@ -18,8 +18,6 @@ function querySql(sql) {
   return new Promise((resolve, reject) => {
     try {
       conn.query(sql, (err, res) => {
-        console.log('res===-----', sql, res)
-
         if (err) {
           reject(err);
         } else {
@@ -40,8 +38,6 @@ function updateOne(sql, data) {
   return new Promise((resolve, reject) => {
     try {
       conn.query(sql, data, (err, res) => {
-        console.log('res===-----', sql, data, res)
-
         if (err) {
           reject(err);
         } else {

@@ -91,8 +91,8 @@ function deleteClassification(req, res, next) {
     const [{ msg }] = err.errors;
     next(boom.badRequest(msg));
   } else {
-    console.log('-----', req.params)
-    const query = `update sys_article_cate set is_delete=1 where id=${req.params.id}`
+    console.log('-----', req.query)
+    const query = `update sys_article_cate set is_delete=1 where id=${req.query.id}`
     querySql(query).then(result => {
       if (result.affectedRows === 1) {
         res.json({
@@ -135,12 +135,12 @@ function getArticleList(req, res, next) {
     const [{ msg }] = err.errors;
     next(boom.badRequest(msg));
   } else {
-    console.log('-----', req.params)
-    const query = `select * from sys_article where lable_id=${req.params.id}`
+    console.log('req.query',req.query)
+    const query = `select * from sys_article where lable_id=${req.query.id}`
     querySql(query).then(result => {
       res.json({
         code: CODE_SUCCESS,
-        msg: '获取分类成功',
+        msg: '获取列表成功',
         data: result
       })
     })
@@ -178,7 +178,7 @@ function getArticleDetail(req, res, next) {
     const [{ msg }] = err.errors;
     next(boom.badRequest(msg));
   } else {
-    const query = `select * from sys_article where id=${req.params.id}`
+    const query = `select * from sys_article where id=${req.query.id}`
     querySql(query).then(result => {
       console.log('----', result)
 
@@ -237,11 +237,13 @@ function updateOrEdit(req, res, tableName) {
 //爬百度新闻
 function getBaiduNews(req, res, next) {
   const { url, seave, lableId } = req.body
+  console.log('作者----', url)
+
   superagent.get(url)
-    .set('Referer', 'https://author.baidu.com/')
+    // .set('Referer', 'https://author.baidu.com/')
     .set('Accept', 'image/webp,image/,/*;q=0.8')
     .end(async (err, sres) => {
-      // console.log('errerrerr', err, sres);
+      console.log('errerrerr', err, sres);
       // 常规的错误处理
       if (err) {
         return next(err);
@@ -255,9 +257,10 @@ function getBaiduNews(req, res, next) {
       let $ = cheerio.load(sres.text);
       let items = [];
       let values = []
-      $('.xinwen18886_ind04 .con ul').each((idx, element) => {
+      $('.corriente .one-articulo-titulo a').each((idx, element) => {
         let $element = $(element);
-        console.log('作者----', $element)
+        console.log('作者----', $element.attr('href'))
+        res.send( {href:$element.attr('href')});
 
       });
 
@@ -270,14 +273,13 @@ function getBaiduNews(req, res, next) {
 }
 //爬新闻详情
 function getNewsDetail(req, res, next) {
-  console.log('作者----', req.query)
+  console.log('作者----', req.body)
 
-  const { url, lableId, id } = req.query
+  const { url, lableId, id } = req.body
   superagent.get(url)
-    .set('Referer', 'https://author.baidu.com/')
     .set('Accept', 'image/webp,image/,/*;q=0.8')
     .end(async (err, sres) => {
-      // console.log('errerrerr', err, sres);
+      console.log('errerrerr', err, sres);
       // 常规的错误处理
       if (err) {
         return next(err);
@@ -285,9 +287,12 @@ function getNewsDetail(req, res, next) {
       let $ = cheerio.load(sres.text);
       let items = [];
       let values = []
-      console.log('作者----', $('body').html())
+      $('.one-articulo').each((idx, element) => {
+        let $element = $(element);
+        console.log('作者----', $element.html())
+      });
       res.send({
-        content: $('body').html()
+        content: $('.one-articulo').html()
       });
       const query = `update sys_article_cate set (content) where id=${req.params.id}`
       // updateOne(query, [values]).then(result => {

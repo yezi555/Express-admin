@@ -3,6 +3,10 @@ const express = require('express');
 const userRouter = require('./users'); // 引入user路由模块
 const articleRouter = require('./article'); // 引入user路由模块
 const uploadRouter = require('./upload'); // 引入user路由模块
+const roomRouter = require('./room'); // 引入user路由模块
+const socket = require('./socket'); // 引入user路由模块
+
+
 
 
 // const taskRouter = require('./tasks'); // 引入task路由模块
@@ -13,7 +17,11 @@ router.use(jwtAuth); // 注入认证模块
 
 router.use('/api', userRouter); // 注入用户路由模块
 router.use('/api', articleRouter); // 注入任务路由模块
+router.use('/api', roomRouter); // 注入房间
 router.use('/api', uploadRouter); // 注入上传
+router.use('/api', socket); // 注入上传
+
+
 
 // 自定义统一异常处理中间件，需要放在代码最后
 router.use((err, req, res, next) => {

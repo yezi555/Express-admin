@@ -24,7 +24,13 @@ const jwtAuth = expressJwt({
     '/api/login',
     '/api/register',
     '/api/resetPwd',
-    `/api/wxLogin`
+    `/api/wxLogin`,
+    `/api/getArticleClass`,
+    `/api/getArticleList`,
+    `/api/getArticleDetail`,
+    `/api/getBaiduNews`,
+    `/api/getNewsDetail`,
+    `/api/userSocket`
   ]
 })
 
